@@ -1,0 +1,76 @@
+object fmenuprincipal: Tfmenuprincipal
+  Left = 0
+  Top = 0
+  Caption = 'Menu Principal'
+  ClientHeight = 232
+  ClientWidth = 640
+  FormFactor.Width = 320
+  FormFactor.Height = 480
+  FormFactor.Devices = [Desktop]
+  OnCreate = FormCreate
+  DesignerMasterStyle = 0
+  object Panel1: TPanel
+    Align = Client
+    Size.Width = 640.000000000000000000
+    Size.Height = 232.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 0
+  end
+  object main_menu: TMainMenu
+    Left = 288
+    Top = 96
+    object mnu_cadastro: TMenuItem
+      Text = 'Cadastros'
+      object mnu_cadcli: TMenuItem
+        Locked = True
+        Text = 'Clientes'
+        OnClick = mnu_cadcliClick
+      end
+      object mnu_cadforn: TMenuItem
+        Locked = True
+        Text = 'Fornecedores'
+        OnClick = mnu_cadfornClick
+      end
+      object mnu_cadprod: TMenuItem
+        Locked = True
+        Text = 'Produtos'
+        OnClick = mnu_cadprodClick
+      end
+    end
+    object mnu_vendas: TMenuItem
+      Text = 'Vendas'
+      object mnu_cadvendas: TMenuItem
+        Locked = True
+        Text = 'Vendas'
+        OnClick = mnu_cadvendasClick
+      end
+    end
+    object mnu_consulta: TMenuItem
+      Text = 'Consultas'
+      object mnu_bscclientes: TMenuItem
+        Locked = True
+        Text = 'Clientes'
+        OnClick = mnu_bscclientesClick
+      end
+      object mnu_bscfornecedores: TMenuItem
+        Locked = True
+        Text = 'Fornecedores'
+        OnClick = mnu_bscfornecedoresClick
+      end
+      object mnu_bscprodutos: TMenuItem
+        Locked = True
+        Text = 'Produtos'
+        OnClick = mnu_bscprodutosClick
+      end
+      object mnu_bscvendas: TMenuItem
+        Locked = True
+        Text = 'Vendas'
+        OnClick = mnu_bscvendasClick
+      end
+    end
+    object mnu_sair: TMenuItem
+      Text = 'Fechar o sistema'
+      OnClick = mnu_sairClick
+    end
+  end
+end
