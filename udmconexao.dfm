@@ -1,14 +1,15 @@
 object dmconexao: Tdmconexao
+  OnCreate = DataModuleCreate
   Height = 475
   Width = 451
   PixelsPerInch = 120
   object ac_connec: TADOConnection
-    Connected = True
     ConnectionString = 
       'Provider=MSOLEDBSQL.1;Password=123456;Persist Security Info=True' +
       ';User ID=sa;Initial Catalog=MONTREAL;Data Source=LINHARES;Initia' +
       'l File Name="";Server SPN="";Authentication="";Access Token=""'
     ConnectOptions = coAsyncConnect
+    KeepConnection = False
     Mode = cmReadWrite
     Provider = 'MSOLEDBSQL.1'
     Left = 56
@@ -129,16 +130,17 @@ object dmconexao: Tdmconexao
     Parameters = <
       item
         Name = 'PRODUTO'
-        Attributes = [paSigned]
+        Attributes = [paSigned, paNullable]
         DataType = ftInteger
         Precision = 10
         Size = 4
         Value = Null
       end>
     SQL.Strings = (
-      'SELECT *'
-      'FROM dbo.PRODUTOS'
-      'WHERE PRO_COD = :PRODUTO')
+      'SELECT P.*,  F.FOR_NOME'
+      'FROM dbo.PRODUTOS P'
+      'LEFT JOIN dbo.FORNECEDORES F ON F.FOR_COD = P.PRO_FORCOD'
+      'WHERE P.PRO_COD = :PRODUTO')
     Left = 56
     Top = 240
     object aq_produtoPRO_COD: TIntegerField
@@ -165,6 +167,7 @@ object dmconexao: Tdmconexao
       DisplayLabel = 'Fornecedor'
       FieldName = 'PRO_FORCOD'
       ProviderFlags = [pfInUpdate]
+      OnValidate = aq_produtoPRO_FORCODValidate
     end
     object aq_produtoPRO_ATIINA: TStringField
       DisplayLabel = 'Inativo'
@@ -173,65 +176,11 @@ object dmconexao: Tdmconexao
       FixedChar = True
       Size = 1
     end
-  end
-  object aq_venda_produto: TADOQuery
-    Connection = ac_connec
-    CursorType = ctStatic
-    Parameters = <
-      item
-        Name = 'CODIGO'
-        Attributes = [paSigned, paNullable]
-        DataType = ftInteger
-        Precision = 10
-        Size = 4
-        Value = Null
-      end>
-    SQL.Strings = (
-      'SELECT *'
-      'FROM VENDAS_PRODUTOS'
-      'WHERE VPR_COD = :CODIGO')
-    Left = 48
-    Top = 382
-    object aq_venda_produtoVPR_COD: TIntegerField
-      DisplayLabel = 'C'#243'digo'
-      FieldName = 'VPR_COD'
-    end
-    object aq_venda_produtoVPR_NUMVENDA: TIntegerField
-      DisplayLabel = 'N'#250'mero da Venda'
-      FieldName = 'VPR_NUMVENDA'
-    end
-    object aq_venda_produtoVPR_PROCOD: TIntegerField
-      DisplayLabel = 'Produto'
-      FieldName = 'VPR_PROCOD'
-    end
-    object aq_venda_produtoVPR_QTDVENDIDA: TBCDField
-      DisplayLabel = 'Quantidade Vendida'
-      FieldName = 'VPR_QTDVENDIDA'
-      Precision = 7
-    end
-    object aq_venda_produtoVPR_VLRTOTPROD: TBCDField
-      DisplayLabel = 'Valor Total do Produto'
-      FieldName = 'VPR_VLRTOTPROD'
-      DisplayFormat = '######,.00'
-      EditFormat = '######,.00'
-      Precision = 7
-    end
-    object aq_venda_produtoPRO_DESC: TStringField
-      DisplayLabel = 'Descri'#231#227'o do Produto'
-      FieldKind = fkCalculated
-      FieldName = 'PRO_DESC'
+    object aq_produtoFOR_NOME: TStringField
+      FieldName = 'FOR_NOME'
       ProviderFlags = []
+      ReadOnly = True
       Size = 70
-      Calculated = True
-    end
-    object aq_venda_produtoPRO_PRECO: TFloatField
-      DisplayLabel = 'Pre'#231'o Unit'#225'rio'
-      FieldKind = fkCalculated
-      FieldName = 'PRO_PRECO'
-      ProviderFlags = []
-      DisplayFormat = '######,.00'
-      EditFormat = '######,.00'
-      Calculated = True
     end
   end
   object aq_venda: TADOQuery
@@ -249,8 +198,9 @@ object dmconexao: Tdmconexao
         Value = Null
       end>
     SQL.Strings = (
-      'SELECT *'
-      'FROM VENDAS'
+      'SELECT V.*, C.CLI_NOME'
+      'FROM dbo.VENDAS V'
+      'LEFT JOIN dbo.CLIENTES C ON C.CLI_COD = V.VEN_CLICOD'
       'WHERE VEN_NUMERO = :VENDA')
     Left = 48
     Top = 312
@@ -263,6 +213,7 @@ object dmconexao: Tdmconexao
       DisplayLabel = 'Cliente'
       FieldName = 'VEN_CLICOD'
       ProviderFlags = [pfInUpdate]
+      OnValidate = aq_vendaVEN_CLICODValidate
     end
     object aq_vendaVEN_VLRTOTAL: TBCDField
       DisplayLabel = 'Valor Total'
@@ -281,16 +232,78 @@ object dmconexao: Tdmconexao
       FixedChar = True
       Size = 1
     end
-    object aq_vendaCLI_NOME: TStringField
-      FieldKind = fkCalculated
-      FieldName = 'CLI_NOME'
-      Size = 70
-      Calculated = True
-    end
     object aq_vendaVEN_DATAHORA: TDateTimeField
       DisplayLabel = 'Data/Hora da Venda'
       FieldName = 'VEN_DATAHORA'
       EditMask = '!99/99/9999 99:99:99;1;_'
+    end
+    object aq_vendaCLI_NOME: TStringField
+      FieldName = 'CLI_NOME'
+      ProviderFlags = []
+      ReadOnly = True
+      Size = 70
+    end
+  end
+  object aq_venda_produto: TADOQuery
+    Connection = ac_connec
+    CursorType = ctStatic
+    BeforePost = aq_venda_produtoBeforePost
+    OnNewRecord = aq_venda_produtoNewRecord
+    Parameters = <
+      item
+        Name = 'VENDA'
+        Attributes = [paSigned, paNullable]
+        DataType = ftInteger
+        Precision = 10
+        Size = 4
+        Value = Null
+      end>
+    SQL.Strings = (
+      'SELECT VP.*, P.PRO_DESC, P.PRO_PRECO'
+      'FROM VENDAS_PRODUTOS VP'
+      'LEFT JOIN PRODUTOS P ON P.PRO_COD = VP.VPR_PROCOD'
+      'WHERE VPR_NUMVENDA = :VENDA')
+    Left = 48
+    Top = 382
+    object aq_venda_produtoVPR_COD: TIntegerField
+      DisplayLabel = 'C'#243'digo'
+      FieldName = 'VPR_COD'
+    end
+    object aq_venda_produtoVPR_NUMVENDA: TIntegerField
+      DisplayLabel = 'N'#250'mero da Venda'
+      FieldName = 'VPR_NUMVENDA'
+    end
+    object aq_venda_produtoVPR_PROCOD: TIntegerField
+      DisplayLabel = 'Produto'
+      FieldName = 'VPR_PROCOD'
+      OnValidate = aq_venda_produtoVPR_PROCODValidate
+    end
+    object aq_venda_produtoVPR_QTDVENDIDA: TBCDField
+      DisplayLabel = 'Quantidade Vendida'
+      FieldName = 'VPR_QTDVENDIDA'
+      OnValidate = aq_venda_produtoVPR_QTDVENDIDAValidate
+      Precision = 7
+    end
+    object aq_venda_produtoVPR_VLRTOTPROD: TBCDField
+      DisplayLabel = 'Valor Total do Produto'
+      FieldName = 'VPR_VLRTOTPROD'
+      DisplayFormat = '######,.00'
+      EditFormat = '######,.00'
+      Precision = 7
+    end
+    object aq_venda_produtoPRO_DESC: TStringField
+      DisplayLabel = 'Descri'#231#227'o do Produto'
+      FieldName = 'PRO_DESC'
+      ProviderFlags = []
+      ReadOnly = True
+      Size = 70
+    end
+    object aq_venda_produtoPRO_PRECO: TBCDField
+      DisplayLabel = 'Valor Unit'#225'rio'
+      FieldName = 'PRO_PRECO'
+      ProviderFlags = []
+      ReadOnly = True
+      Precision = 7
     end
   end
 end

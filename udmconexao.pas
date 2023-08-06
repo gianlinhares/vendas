@@ -32,6 +32,14 @@ type
     aq_produtoPRO_PRECO: TBCDField;
     aq_produtoPRO_FORCOD: TIntegerField;
     aq_produtoPRO_ATIINA: TStringField;
+    aq_venda: TADOQuery;
+    aq_vendaVEN_NUMERO: TIntegerField;
+    aq_vendaVEN_CLICOD: TIntegerField;
+    aq_vendaVEN_VLRTOTAL: TBCDField;
+    aq_vendaVEN_STATUS: TStringField;
+    aq_vendaVEN_DATAHORA: TDateTimeField;
+    aq_produtoFOR_NOME: TStringField;
+    aq_vendaCLI_NOME: TStringField;
     aq_venda_produto: TADOQuery;
     aq_venda_produtoVPR_COD: TIntegerField;
     aq_venda_produtoVPR_NUMVENDA: TIntegerField;
@@ -39,14 +47,7 @@ type
     aq_venda_produtoVPR_QTDVENDIDA: TBCDField;
     aq_venda_produtoVPR_VLRTOTPROD: TBCDField;
     aq_venda_produtoPRO_DESC: TStringField;
-    aq_venda_produtoPRO_PRECO: TFloatField;
-    aq_venda: TADOQuery;
-    aq_vendaVEN_NUMERO: TIntegerField;
-    aq_vendaVEN_CLICOD: TIntegerField;
-    aq_vendaVEN_VLRTOTAL: TBCDField;
-    aq_vendaVEN_STATUS: TStringField;
-    aq_vendaCLI_NOME: TStringField;
-    aq_vendaVEN_DATAHORA: TDateTimeField;
+    aq_venda_produtoPRO_PRECO: TBCDField;
     procedure aq_clienteNewRecord(DataSet: TDataSet);
     procedure aq_clienteCLI_CPFValidate(Sender: TField);
     procedure aq_clienteBeforePost(DataSet: TDataSet);
@@ -60,11 +61,19 @@ type
     procedure aq_vendaNewRecord(DataSet: TDataSet);
     procedure aq_vendaVEN_STATUSGetText(Sender: TField; var Text: string; DisplayText: Boolean);
     procedure aq_vendaVEN_VLRTOTALGetText(Sender: TField; var Text: string; DisplayText: Boolean);
+    procedure aq_produtoPRO_FORCODValidate(Sender: TField);
+    procedure aq_vendaVEN_CLICODValidate(Sender: TField);
+    procedure aq_venda_produtoBeforePost(DataSet: TDataSet);
+    procedure aq_venda_produtoVPR_QTDVENDIDAValidate(Sender: TField);
+    procedure aq_venda_produtoVPR_PROCODValidate(Sender: TField);
+    procedure aq_venda_produtoNewRecord(DataSet: TDataSet);
+    procedure DataModuleCreate(Sender: TObject);
   private
     function CPF_JaCadastrado(sCPF : string) : string;
     function IsValidCPF(pCPF: string): Boolean;
     function IsValidCNPJ(pCNPJ: string): Boolean;
     function CNPJ_JaCadastrado(sCNPJ: string): string;
+    procedure VerificaProdutoCadastrado;
   public
     procedure InsereExibeMsg(sMsg : string; bAborta : boolean = true);
     procedure OnExitFornecedores(dbe : TEdit; lbl : TLabel; bSoAtivos : boolean);
@@ -472,6 +481,29 @@ begin
   aq_produtoPRO_ATIINA.AsString := 'A';
 end;
 
+procedure Tdmconexao.aq_produtoPRO_FORCODValidate(Sender: TField);
+var
+  aq_for : TADOQuery;
+begin
+  if Trim(Sender.AsString) <> '' then
+  begin
+    aq_for := TADOQuery.Create(nil);
+    try
+      aq_for.Connection := ac_connec;
+      aq_for.SQL.Add(GetSQLFornecedores(Sender.AsString, true));
+      aq_for.Open;
+      if not(aq_for.IsEmpty) then
+        aq_produtoFOR_NOME.AsString := aq_for.FieldByName('FOR_NOME').AsString
+      else
+        InsereExibeMsg('Fornecedor ínválido ou não cadastrado');
+    finally
+      aq_for.Free;
+    end;
+  end
+  else
+    aq_produtoFOR_NOME.Clear;
+end;
+
 procedure Tdmconexao.aq_produtoPRO_PRECOValidate(Sender: TField);
 begin
   if Trim(Sender.AsString) <> '' then
@@ -520,6 +552,29 @@ begin
   aq_vendaVEN_DATAHORA.AsDateTime := Now;
 end;
 
+procedure Tdmconexao.aq_vendaVEN_CLICODValidate(Sender: TField);
+var
+  aq_cli : TADOQuery;
+begin
+  if Trim(Sender.AsString) <> '' then
+  begin
+    aq_cli := TADOQuery.Create(nil);
+    try
+      aq_cli.Connection := ac_connec;
+      aq_cli.SQL.Add(GetSQLClientes(Sender.AsString, true));
+      aq_cli.Open;
+      if not(aq_cli.IsEmpty) then
+        aq_vendaCLI_NOME.AsString := aq_cli.FieldByName('CLI_NOME').AsString
+      else
+        InsereExibeMsg('Cliente ínválido ou não cadastrado');
+    finally
+      aq_cli.Free;
+    end;
+  end
+  else
+    aq_vendaCLI_NOME.Clear;
+end;
+
 procedure Tdmconexao.aq_vendaVEN_STATUSGetText(Sender: TField; var Text: string; DisplayText: Boolean);
 begin
   if Sender.AsString = 'E' then
@@ -534,6 +589,94 @@ begin
     Text := ''
   else
     Text := Sender.AsString;
+end;
+
+procedure Tdmconexao.VerificaProdutoCadastrado;
+var
+  aq_proven : TADOQuery;
+begin
+  if Trim(aq_venda_produtoVPR_COD.AsString) <> '' then
+  begin
+    aq_proven := TADOQuery.Create(nil);
+    try
+      aq_proven.Connection := dmconexao.ac_connec;
+      aq_proven.SQL.Add('SELECT VPR_COD ' +
+                        'FROM VENDAS_PRODUTOS ' +
+                        'WHERE VPR_NUMVENDA = ' + aq_venda_produtoVPR_NUMVENDA.AsString + ' ' +
+                        'AND VPR_PROCOD = ' + aq_venda_produtoVPR_PROCOD.AsString + ' ' +
+                        'AND VPR_COD <> ' + aq_venda_produtoVPR_COD.AsString);
+      aq_proven.Open;
+      if not(aq_proven.IsEmpty) then
+        dmconexao.InsereExibeMsg('O produto já está cadastrado');
+    finally
+      aq_proven.Free;
+    end;
+  end;
+end;
+
+procedure Tdmconexao.aq_venda_produtoBeforePost(DataSet: TDataSet);
+begin
+  if Trim(aq_venda_produtoVPR_PROCOD.AsString) = '' then
+    dmconexao.InsereExibeMsg('Informe o produto');
+
+  VerificaProdutoCadastrado;
+
+  if aq_venda_produtoVPR_COD.AsInteger = 0 then
+    aq_venda_produtoVPR_COD.AsInteger := dmconexao.RetornaSequencial('VPR_COD', 'VENDAS_PRODUTOS');
+
+  aq_venda.Edit;
+end;
+
+procedure Tdmconexao.aq_venda_produtoNewRecord(DataSet: TDataSet);
+begin
+  if aq_vendaVEN_NUMERO.IsNull then
+  begin
+    aq_venda_produto.CancelUpdates;
+    InsereExibeMsg('Grave a venda primeiro');
+  end;
+
+  aq_venda_produtoVPR_NUMVENDA.AsInteger := aq_vendaVEN_NUMERO.AsInteger;
+end;
+
+procedure Tdmconexao.aq_venda_produtoVPR_PROCODValidate(Sender: TField);
+var
+  aq_pro : TADOQuery;
+begin
+  if Trim(Sender.AsString) <> '' then
+  begin
+    VerificaProdutoCadastrado;
+
+    aq_pro := TADOQuery.Create(nil);
+    try
+      aq_pro.Connection := dmconexao.ac_connec;
+      aq_pro.SQL.Add(dmconexao.GetSQLProdutos(Sender.AsString, true));
+      aq_pro.Open;
+      if not(aq_pro.IsEmpty) then
+      begin
+        aq_venda_produtoPRO_DESC.AsString := aq_pro.FieldByName('PRO_DESC').AsString;
+        aq_venda_produtoPRO_PRECO.AsFloat := aq_pro.FieldByName('PRO_PRECO').AsFloat;
+      end
+      else
+        dmconexao.InsereExibeMsg('Produto inválido ou inexistente');
+    finally
+      aq_pro.Free;
+    end;
+  end
+  else
+  begin
+    aq_venda_produtoPRO_DESC.Clear;
+    aq_venda_produtoPRO_PRECO.Clear;
+  end;
+end;
+
+procedure Tdmconexao.aq_venda_produtoVPR_QTDVENDIDAValidate(Sender: TField);
+begin
+  if Trim(Sender.AsString) <> '' then
+  begin
+    if Sender.AsFloat <= 0 then
+      InsereExibeMsg('A quantidade vendida deve ser maior que 0');
+    aq_venda_produtoVPR_VLRTOTPROD.AsFloat := aq_venda_produtoPRO_PRECO.AsFloat * Sender.AsFloat;
+  end;
 end;
 
 function Tdmconexao.CPF_JaCadastrado(sCPF: string): string;
@@ -553,6 +696,11 @@ begin
   finally
     qry.Free;
   end;
+end;
+
+procedure Tdmconexao.DataModuleCreate(Sender: TObject);
+begin
+  ac_connec.Connected := true;
 end;
 
 function Tdmconexao.CNPJ_JaCadastrado(sCNPJ: string): string;

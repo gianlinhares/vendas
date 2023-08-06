@@ -24,7 +24,7 @@ type
     btn_sair: TBitBtn;
     btn_pesquisa: TButton;
     src_produto: TDataSource;
-    lbl_fornec_desc: TLabel;
+    dbt_fornec_desc: TDBText;
     procedure btn_sairClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -32,12 +32,10 @@ type
     procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure dbn_produtosBeforeAction(Sender: TObject; Button: TNavigateBtn);
     procedure dbn_produtosClick(Sender: TObject; Button: TNavigateBtn);
-    procedure dbe_fornec_codExit(Sender: TObject);
   private
     iCodProduto : integer;
     bInsercaoEdicao : boolean;
     procedure Abre(iCodigo : integer);
-    procedure RetornaDescricaoFornecedor;
   public
     property CodigoProduto : integer read iCodProduto write iCodProduto;
     property InsereOuEdita : boolean read bInsercaoEdicao write bInsercaoEdicao;
@@ -58,8 +56,6 @@ begin
     dmconexao.aq_produto.Close;
   dmconexao.aq_produto.Parameters.ParamByName('PRODUTO').Value := iCodigo;
   dmconexao.aq_produto.Open;
-
-  RetornaDescricaoFornecedor;
 end;
 
 procedure Tfcadprodutos.btn_pesquisaClick(Sender: TObject);
@@ -74,34 +70,6 @@ end;
 procedure Tfcadprodutos.btn_sairClick(Sender: TObject);
 begin
   Close;
-end;
-
-procedure Tfcadprodutos.RetornaDescricaoFornecedor;
-var
-  aq_for : TADOQuery;
-begin
-  if Trim(dmconexao.aq_produtoPRO_FORCOD.AsString) <> '' then
-  begin
-    aq_for := TADOQuery.Create(nil);
-    try
-      aq_for.Connection := dmconexao.ac_connec;
-      aq_for.SQL.Add(dmconexao.GetSQLFornecedores(dmconexao.aq_produtoPRO_FORCOD.AsString, true));
-      aq_for.Open;
-      if not(aq_for.IsEmpty) then
-        lbl_fornec_desc.Caption := aq_for.FieldByName('FOR_NOME').AsString
-      else
-        dmconexao.InsereExibeMsg('Fornecedor ínválido ou não cadastrado');
-    finally
-      aq_for.Free;
-    end;
-  end
-  else
-    lbl_fornec_desc.Caption := '';
-end;
-
-procedure Tfcadprodutos.dbe_fornec_codExit(Sender: TObject);
-begin
-  RetornaDescricaoFornecedor;
 end;
 
 procedure Tfcadprodutos.dbn_produtosBeforeAction(Sender: TObject; Button: TNavigateBtn);
@@ -148,7 +116,6 @@ begin
         if not(dmconexao.aq_produto.State in dsEditModes) then
             dmconexao.aq_produto.Edit;
           dmconexao.aq_produtoPRO_FORCOD.AsString := sCodForn;
-          dbe_fornec_codExit(dbe_fornec_cod);
       end;
     end;
   end;

@@ -54,12 +54,11 @@ object fcadprodutos: Tfcadprodutos
     Height = 13
     Caption = 'Fornecedor (F5 = Busca de Fornecedores)'
   end
-  object lbl_fornec_desc: TLabel
+  object dbt_fornec_desc: TDBText
     Left = 108
     Top = 155
-    Width = 75
-    Height = 13
-    Caption = 'lbl_fornec_desc'
+    Width = 311
+    Height = 17
   end
   object dbn_produtos: TDBNavigator
     Left = 0
@@ -113,7 +112,6 @@ object fcadprodutos: Tfcadprodutos
     DataField = 'PRO_FORCOD'
     DataSource = src_produto
     TabOrder = 4
-    OnExit = dbe_fornec_codExit
   end
   object btn_sair: TBitBtn
     Left = 319

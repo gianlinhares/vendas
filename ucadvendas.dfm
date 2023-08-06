@@ -76,13 +76,6 @@ object fcadvendas: Tfcadvendas
     Height = 15
     Caption = 'Valor Total'
   end
-  object lbl_cli_desc: TLabel
-    Left = 108
-    Top = 118
-    Width = 59
-    Height = 15
-    Caption = 'lbl_cli_desc'
-  end
   object dbt_status: TDBText
     Left = 381
     Top = 27
@@ -90,6 +83,12 @@ object fcadvendas: Tfcadvendas
     Height = 17
     DataField = 'VEN_STATUS'
     DataSource = src_venda
+  end
+  object dbt_cli_desc: TDBText
+    Left = 108
+    Top = 118
+    Width = 389
+    Height = 17
   end
   object dtp_datahora: TDateTimePicker
     Left = 47
@@ -142,7 +141,6 @@ object fcadvendas: Tfcadvendas
     DataField = 'VEN_CLICOD'
     DataSource = src_venda
     TabOrder = 2
-    OnExit = dbe_cli_codExit
   end
   object dbe_vltot: TDBEdit
     Left = 47
@@ -192,14 +190,12 @@ object fcadvendas: Tfcadvendas
       item
         Expanded = False
         FieldName = 'PRO_DESC'
-        ReadOnly = True
         Width = 366
         Visible = True
       end
       item
         Expanded = False
         FieldName = 'PRO_PRECO'
-        ReadOnly = True
         Title.Alignment = taRightJustify
         Visible = True
       end
@@ -207,6 +203,8 @@ object fcadvendas: Tfcadvendas
         Expanded = False
         FieldName = 'VPR_QTDVENDIDA'
         Title.Alignment = taRightJustify
+        Title.Caption = 'Qtd Vendida'
+        Width = 88
         Visible = True
       end
       item
@@ -214,6 +212,7 @@ object fcadvendas: Tfcadvendas
         FieldName = 'VPR_VLRTOTPROD'
         ReadOnly = True
         Title.Alignment = taRightJustify
+        Width = 145
         Visible = True
       end>
   end
@@ -243,147 +242,8 @@ object fcadvendas: Tfcadvendas
     Top = 69
   end
   object src_venda_produto: TDataSource
-    DataSet = cds_produto
-    Left = 312
-    Top = 120
-  end
-  object cds_produto: TClientDataSet
-    PersistDataPacket.Data = {
-      AF0000009619E0BD010000001800000007000000000003000000AF0007565052
-      5F434F4404000100000000000C5650525F4E554D56454E444104000100000000
-      000A5650525F50524F434F4404000100000000000E5650525F51544456454E44
-      49444108000400000000000E5650525F564C52544F5450524F44080004000000
-      00000850524F5F44455343010049000000010005574944544802000200460009
-      50524F5F505245434F08000400000000000000}
-    Active = True
-    Aggregates = <>
-    FieldDefs = <
-      item
-        Name = 'VPR_COD'
-        DataType = ftInteger
-      end
-      item
-        Name = 'VPR_NUMVENDA'
-        DataType = ftInteger
-      end
-      item
-        Name = 'VPR_PROCOD'
-        DataType = ftInteger
-      end
-      item
-        Name = 'VPR_QTDVENDIDA'
-        DataType = ftFloat
-      end
-      item
-        Name = 'VPR_VLRTOTPROD'
-        DataType = ftFloat
-      end
-      item
-        Name = 'PRO_DESC'
-        DataType = ftString
-        Size = 70
-      end
-      item
-        Name = 'PRO_PRECO'
-        DataType = ftFloat
-      end>
-    IndexDefs = <>
-    Params = <>
-    StoreDefs = True
-    BeforePost = cds_produtoBeforePost
-    AfterPost = cds_produtoAfterPost
-    BeforeDelete = cds_produtoBeforeDelete
-    OnNewRecord = cds_produtoNewRecord
-    Left = 408
-    Top = 120
-    object cds_produtoVPR_COD: TIntegerField
-      FieldName = 'VPR_COD'
-    end
-    object cds_produtoVPR_NUMVENDA: TIntegerField
-      FieldName = 'VPR_NUMVENDA'
-    end
-    object cds_produtoVPR_PROCOD: TIntegerField
-      DisplayLabel = 'Produto'
-      FieldName = 'VPR_PROCOD'
-      OnValidate = cds_produtoVPR_PROCODValidate
-    end
-    object cds_produtoVPR_QTDVENDIDA: TFloatField
-      DisplayLabel = 'Quantidade Vendida'
-      FieldName = 'VPR_QTDVENDIDA'
-      OnValidate = cds_produtoVPR_QTDVENDIDAValidate
-    end
-    object cds_produtoVPR_VLRTOTPROD: TFloatField
-      DisplayLabel = 'Valor Total do Produto'
-      FieldName = 'VPR_VLRTOTPROD'
-    end
-    object cds_produtoPRO_DESC: TStringField
-      DisplayLabel = 'Descri'#231#227'o do Produto'
-      FieldName = 'PRO_DESC'
-      Size = 70
-    end
-    object cds_produtoPRO_PRECO: TFloatField
-      DisplayLabel = 'Pre'#231'o Unit'#225'rio'
-      FieldName = 'PRO_PRECO'
-    end
-  end
-  object aq_venda_produto: TADOQuery
-    Connection = dmconexao.ac_connec
-    CursorType = ctStatic
-    Parameters = <
-      item
-        Name = 'VENDA'
-        Attributes = [paSigned, paNullable]
-        DataType = ftInteger
-        Precision = 10
-        Size = 4
-        Value = Null
-      end>
-    SQL.Strings = (
-      'SELECT *'
-      'FROM VENDAS_PRODUTOS'
-      'WHERE VPR_NUMVENDA = :VENDA')
-    Left = 408
-    Top = 62
-    object aq_venda_produtoVPR_COD: TIntegerField
-      DisplayLabel = 'C'#243'digo'
-      FieldName = 'VPR_COD'
-    end
-    object aq_venda_produtoVPR_NUMVENDA: TIntegerField
-      DisplayLabel = 'N'#250'mero da Venda'
-      FieldName = 'VPR_NUMVENDA'
-    end
-    object aq_venda_produtoVPR_PROCOD: TIntegerField
-      DisplayLabel = 'Produto'
-      FieldName = 'VPR_PROCOD'
-    end
-    object aq_venda_produtoVPR_QTDVENDIDA: TBCDField
-      DisplayLabel = 'Quantidade Vendida'
-      FieldName = 'VPR_QTDVENDIDA'
-      Precision = 7
-    end
-    object aq_venda_produtoVPR_VLRTOTPROD: TBCDField
-      DisplayLabel = 'Valor Total do Produto'
-      FieldName = 'VPR_VLRTOTPROD'
-      DisplayFormat = '######,.00'
-      EditFormat = '######,.00'
-      Precision = 7
-    end
-    object aq_venda_produtoPRO_DESC: TStringField
-      DisplayLabel = 'Descri'#231#227'o do Produto'
-      FieldKind = fkCalculated
-      FieldName = 'PRO_DESC'
-      ProviderFlags = []
-      Size = 70
-      Calculated = True
-    end
-    object aq_venda_produtoPRO_PRECO: TFloatField
-      DisplayLabel = 'Pre'#231'o Unit'#225'rio'
-      FieldKind = fkCalculated
-      FieldName = 'PRO_PRECO'
-      ProviderFlags = []
-      DisplayFormat = '######,.00'
-      EditFormat = '######,.00'
-      Calculated = True
-    end
+    DataSet = dmconexao.aq_venda_produto
+    Left = 320
+    Top = 128
   end
 end
