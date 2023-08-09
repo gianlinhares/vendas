@@ -4,60 +4,42 @@ interface
 
 uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
-  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.DBActns,
-  System.Actions, Vcl.ActnList, System.ImageList, Vcl.ImgList, Vcl.ComCtrls,
-  Vcl.ToolWin, Data.DB, Vcl.StdCtrls, Vcl.DBCtrls, Vcl.Mask, Vcl.Grids,
-  Vcl.DBGrids, Vcl.ExtCtrls, Vcl.Buttons,  System.UITypes, data.Win.ADODB,
-  Datasnap.DBClient;
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, ucadastropadrao, Data.DB, Vcl.StdCtrls,
+  Vcl.Buttons, Vcl.ExtCtrls, Vcl.DBCtrls, Vcl.Grids, Vcl.DBGrids, Vcl.Mask,
+  Vcl.ComCtrls;
 
 type
-  Tfcadvendas = class(Tform)
-    dbn_vendas: TDBNavigator;
-    btn_pesquisa: TButton;
-    src_venda: TDataSource;
+  Tfcadvendas = class(Tfcadastropadrao)
     lbl_numero: TLabel;
     dbt_numero: TDBText;
     lbl_datahora: TLabel;
-    dbe_datahora: TDBEdit;
     lbl_fornec: TLabel;
-    dbe_cli_cod: TDBEdit;
     lbl_status: TLabel;
     shp_prod: TShape;
     lbl_produto: TLabel;
     lbl_vltot: TLabel;
+    dbt_status: TDBText;
+    dbt_cli_desc: TDBText;
+    dtp_datahora: TDateTimePicker;
+    dbe_datahora: TDBEdit;
+    dbe_cli_cod: TDBEdit;
     dbe_vltot: TDBEdit;
     dbn_produtos: TDBNavigator;
     dbg_produtos: TDBGrid;
-    src_venda_produto: TDataSource;
-    dtp_datahora: TDateTimePicker;
-    btn_sair: TButton;
     btn_efetivar: TButton;
-    dbt_status: TDBText;
-    dbt_cli_desc: TDBText;
-    procedure FormCreate(Sender: TObject);
-    procedure FormShow(Sender: TObject);
-    procedure dbn_vendasBeforeAction(Sender: TObject; Button: TNavigateBtn);
-    procedure dbn_vendasClick(Sender: TObject; Button: TNavigateBtn);
-    procedure btn_sairClick(Sender: TObject);
-    procedure btn_pesquisaClick(Sender: TObject);
+    src_venda_produto: TDataSource;
     procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
-    procedure dtp_datahoraChange(Sender: TObject);
-    procedure dbg_produtosEditButtonClick(Sender: TObject);
-    procedure dbn_produtosBeforeAction(Sender: TObject; Button: TNavigateBtn);
-    procedure btn_efetivarClick(Sender: TObject);
-    procedure src_vendaDataChange(Sender: TObject; Field: TField);
-    procedure src_vendaStateChange(Sender: TObject);
     procedure dbg_produtosKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+    procedure dbg_produtosEditButtonClick(Sender: TObject);
+    procedure btn_efetivarClick(Sender: TObject);
+    procedure btn_pesqClick(Sender: TObject);
+    procedure btn_sairClick(Sender: TObject);
+    procedure dbn_cadBeforeAction(Sender: TObject; Button: TNavigateBtn);
   private
-    iCodVenda : integer;
-    bInsercaoEdicao : boolean;
-    procedure Abre(iCodigo : integer);
-
     procedure TestaExistenciaProdutos;
     procedure ControlaEdicaoBotoes(bHabilita: boolean);
   public
-    property CodigoVenda : integer read iCodVenda write iCodVenda;
-    property InsereOuEdita : boolean read bInsercaoEdicao write bInsercaoEdicao;
+    { Public declarations }
   end;
 
 var
@@ -69,23 +51,9 @@ implementation
 
 uses udmconexao;
 
-{ Tfcadvendas }
-
-procedure Tfcadvendas.Abre(iCodigo: integer);
-begin
-  if dmconexao.aq_venda.Active then
-    dmconexao.aq_venda.Close;
-  dmconexao.aq_venda.Parameters.ParamByName('VENDA').Value := iCodigo;
-  dmconexao.aq_venda.Open;
-
-  if dmconexao.aq_venda_produto.Active then
-    dmconexao.aq_venda_produto.Close;
-  dmconexao.aq_venda_produto.Parameters.ParamByName('VENDA').Value := iCodigo;
-  dmconexao.aq_venda_produto.Open;
-end;
-
 procedure Tfcadvendas.btn_efetivarClick(Sender: TObject);
 begin
+  inherited;
   if dmconexao.aq_venda.IsEmpty then
     dmconexao.InsereExibeMsg('Selecione uma venda primeiro.');
   if (dmconexao.aq_venda.State in dsEditmodes) or (dmconexao.aq_venda_produto.State in dsEditModes) then
@@ -101,53 +69,48 @@ begin
   end;
 end;
 
-procedure Tfcadvendas.btn_pesquisaClick(Sender: TObject);
+procedure Tfcadvendas.btn_pesqClick(Sender: TObject);
 var
   sCodVenda : string;
 begin
   TestaExistenciaProdutos;
 
+  inherited;
+
   sCodVenda := dmconexao.RetornaBusca('V');
-  if Trim(sCodVenda) <> '' then
-    Abre(StrToIntDef(sCodVenda, 0));
+  src_cad.DataSet.Refresh;
+
+  if dmconexao.aq_venda_produto.Active then
+    dmconexao.aq_venda_produto.Close;
+  dmconexao.aq_venda_produto.Parameters.ParamByName('VENDA').Value := sCodVenda;
+  dmconexao.aq_venda_produto.Open;
 end;
 
 procedure Tfcadvendas.btn_sairClick(Sender: TObject);
 begin
   TestaExistenciaProdutos;
-  Close;
+  inherited;
+
 end;
 
-procedure Tfcadvendas.src_vendaDataChange(Sender: TObject; Field: TField);
+procedure Tfcadvendas.ControlaEdicaoBotoes(bHabilita: boolean);
+var
+  i : integer;
 begin
-  ControlaEdicaoBotoes((dmconexao.aq_venda.State = dsInsert) or
-                       (dmconexao.aq_vendaVEN_STATUS.AsString = 'P'));
-end;
-
-procedure Tfcadvendas.src_vendaStateChange(Sender: TObject);
-begin
-  ControlaEdicaoBotoes((dmconexao.aq_venda.State = dsInsert) or
-                       (dmconexao.aq_vendaVEN_STATUS.AsString = 'P'));
-end;
-
-procedure Tfcadvendas.ControlaEdicaoBotoes(bHabilita : boolean);
-begin
-  dbn_vendas.Enabled := bHabilita;
-  dbe_datahora.Enabled := bHabilita;
-  dtp_datahora.Enabled := bHabilita;
-  dbe_cli_cod.Enabled  := bHabilita;
-  dbe_vltot.Enabled    := bHabilita;
-  dbn_produtos.Enabled := bHabilita;
-  if bHabilita then
-    dbg_produtos.Options := dbg_produtos.Options - [dgRowSelect] + [dgEditing]
-  else
-    dbg_produtos.Options := dbg_produtos.Options + [dgRowSelect];
+  for i := 0 to ComponentCount - 1 do
+  begin
+    if Components[i] is TDBEdit then
+      TDBEdit(Components[i]).Enabled := bHabilita;
+    if Components[i] is TDBNavigator then
+      TDBNavigator(Components[i]).Enabled := bHabilita;
+  end;
 end;
 
 procedure Tfcadvendas.dbg_produtosEditButtonClick(Sender: TObject);
 var
   sCodProd : string;
 begin
+  inherited;
   if dbg_produtos.SelectedField.FieldName = 'VPR_PROCOD' then
   begin
     sCodProd := dmconexao.RetornaBusca('P', true);
@@ -162,87 +125,28 @@ end;
 
 procedure Tfcadvendas.dbg_produtosKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
 begin
+  inherited;
   if Key = VK_F5 then
      dbg_produtosEditButtonClick(Sender);
 end;
 
-procedure Tfcadvendas.dbn_produtosBeforeAction(Sender: TObject; Button: TNavigateBtn);
+procedure Tfcadvendas.dbn_cadBeforeAction(Sender: TObject; Button: TNavigateBtn);
 begin
-  if button = nbDelete then
-  begin
-    if not(dmconexao.aq_venda_produto.IsEmpty) then
-    begin
-      if MessageDlg('Deseja deletar o registro selecionado?',
-                    mtConfirmation, [mbYes, mbNo], 0, mbYes) = mrYes then
-      begin
-        dmconexao.aq_venda_produto.Delete;
-        abort;
-      end;
-    end;
+  inherited;
+   if Button = nbPost then
+   begin
+    if dmconexao.aq_venda_produto.State in dsEditModes then
+      dmconexao.aq_venda_produto.Post;
+    TestaExistenciaProdutos;
   end;
-end;
-
-procedure Tfcadvendas.dbn_vendasBeforeAction(Sender: TObject; Button: TNavigateBtn);
-begin
-  case Button of
-    nbDelete:
-    begin
-      if not(dmconexao.aq_venda.IsEmpty) then
-      begin
-        if MessageDlg('Deseja deletar o registro selecionado?',
-                      mtConfirmation, [mbYes, mbNo], 0, mbYes) = mrYes then
-        begin
-          if not(dmconexao.aq_venda_produto.IsEmpty) then
-          begin
-            dmconexao.aq_venda_produto.First;
-            while not(dmconexao.aq_venda_produto.Eof) do
-              dmconexao.aq_venda_produto.Delete;
-          end;
-          dmconexao.aq_venda.Delete;
-          abort;
-        end;
-      end;
-    end;
-    nbPost:
-    begin
-      if dmconexao.aq_venda_produto.State in dsEditModes then
-        dmconexao.aq_venda_produto.Post;
-      TestaExistenciaProdutos;
-    end;
-  end;
-end;
-
-procedure Tfcadvendas.TestaExistenciaProdutos;
-begin
-  if (not(dmconexao.aq_vendaVEN_NUMERO.IsNull)) and (dmconexao.aq_venda_produto.IsEmpty) then
-    dmconexao.InsereExibeMsg('A venda deve possuir pelo menos 1 produto');
-end;
-
-procedure Tfcadvendas.dbn_vendasClick(Sender: TObject; Button: TNavigateBtn);
-begin
-  case Button of
-    nbCancel: Abre(dmconexao.aq_produtoPRO_COD.AsInteger);
-    nbInsert: Abre(0);
-  end;
-end;
-
-procedure Tfcadvendas.dtp_datahoraChange(Sender: TObject);
-begin
-  if not(dmconexao.aq_venda.State in dsEditModes) then
-    dmconexao.aq_venda.Edit;
-  dmconexao.aq_vendaVEN_DATAHORA.AsDateTime := dtp_datahora.DateTime;
-end;
-
-procedure Tfcadvendas.FormCreate(Sender: TObject);
-begin
-  iCodVenda       := 0;
-  bInsercaoEdicao := false;
 end;
 
 procedure Tfcadvendas.FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
 var
   sCodCli : string;
 begin
+  inherited;
+
   if Key = VK_F5 then
   begin
     if dbe_cli_cod.Focused then
@@ -256,22 +160,13 @@ begin
       end;
     end;
   end;
+
 end;
 
-procedure Tfcadvendas.FormShow(Sender: TObject);
+procedure Tfcadvendas.TestaExistenciaProdutos;
 begin
-  if iCodVenda <> 0 then
-  begin
-    Abre(iCodVenda);
-    if bInsercaoEdicao then
-      dmconexao.aq_venda.Edit;
-  end
-  else
-  begin
-    Abre(0);
-    if bInsercaoEdicao then
-      dmconexao.aq_venda.Append;
-  end;
+  if (not(dmconexao.aq_vendaVEN_NUMERO.IsNull)) and (dmconexao.aq_venda_produto.IsEmpty) then
+    dmconexao.InsereExibeMsg('A venda deve possuir pelo menos 1 produto');
 end;
 
 end.

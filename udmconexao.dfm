@@ -4,12 +4,12 @@ object dmconexao: Tdmconexao
   Width = 451
   PixelsPerInch = 120
   object ac_connec: TADOConnection
+    Connected = True
     ConnectionString = 
       'Provider=MSOLEDBSQL.1;Password=123456;Persist Security Info=True' +
       ';User ID=sa;Initial Catalog=MONTREAL;Data Source=LINHARES;Initia' +
       'l File Name="";Server SPN="";Authentication="";Access Token=""'
     ConnectOptions = coAsyncConnect
-    KeepConnection = False
     Mode = cmReadWrite
     Provider = 'MSOLEDBSQL.1'
     Left = 56
@@ -30,7 +30,7 @@ object dmconexao: Tdmconexao
         Value = Null
       end>
     SQL.Strings = (
-      'SELECT *'
+      'SELECT CLI_COD, CLI_NOME, CLI_CPF, CLI_ATIINA, CLI_DTNASC'
       'FROM dbo.CLIENTES'
       'WHERE CLI_COD = :CLIENTE')
     Left = 56
@@ -59,6 +59,7 @@ object dmconexao: Tdmconexao
       DisplayLabel = 'Inativo'
       FieldName = 'CLI_ATIINA'
       ProviderFlags = [pfInUpdate]
+      OnGetText = aq_clienteCLI_ATIINAGetText
       FixedChar = True
       Size = 1
     end
@@ -84,7 +85,7 @@ object dmconexao: Tdmconexao
         Value = Null
       end>
     SQL.Strings = (
-      'SELECT *'
+      'SELECT FOR_COD, FOR_NOME, FOR_RAZAO, FOR_CNPJ, FOR_ATIINA'
       'FROM dbo.FORNECEDORES'
       'WHERE FOR_COD = :FORNECEDOR')
     Left = 56
@@ -118,6 +119,7 @@ object dmconexao: Tdmconexao
       DisplayLabel = 'Inativo'
       FieldName = 'FOR_ATIINA'
       ProviderFlags = [pfInUpdate]
+      OnGetText = aq_fornecedorFOR_ATIINAGetText
       FixedChar = True
       Size = 1
     end
@@ -137,7 +139,9 @@ object dmconexao: Tdmconexao
         Value = Null
       end>
     SQL.Strings = (
-      'SELECT P.*,  F.FOR_NOME'
+      
+        'SELECT P.PRO_COD, P.PRO_DESC, P.PRO_PRECO, P.PRO_FORCOD, P.PRO_A' +
+        'TIINA,  F.FOR_NOME'
       'FROM dbo.PRODUTOS P'
       'LEFT JOIN dbo.FORNECEDORES F ON F.FOR_COD = P.PRO_FORCOD'
       'WHERE P.PRO_COD = :PRODUTO')
@@ -173,6 +177,7 @@ object dmconexao: Tdmconexao
       DisplayLabel = 'Inativo'
       FieldName = 'PRO_ATIINA'
       ProviderFlags = [pfInUpdate]
+      OnGetText = aq_produtoPRO_ATIINAGetText
       FixedChar = True
       Size = 1
     end
@@ -230,7 +235,7 @@ object dmconexao: Tdmconexao
       ProviderFlags = [pfInUpdate]
       OnGetText = aq_vendaVEN_STATUSGetText
       FixedChar = True
-      Size = 1
+      Size = 10
     end
     object aq_vendaVEN_DATAHORA: TDateTimeField
       DisplayLabel = 'Data/Hora da Venda'
@@ -238,6 +243,7 @@ object dmconexao: Tdmconexao
       EditMask = '!99/99/9999 99:99:99;1;_'
     end
     object aq_vendaCLI_NOME: TStringField
+      DisplayLabel = 'Nome do Cliente'
       FieldName = 'CLI_NOME'
       ProviderFlags = []
       ReadOnly = True
@@ -259,7 +265,9 @@ object dmconexao: Tdmconexao
         Value = Null
       end>
     SQL.Strings = (
-      'SELECT VP.*, P.PRO_DESC, P.PRO_PRECO'
+      
+        'SELECT VP.VPR_COD, VP.VPR_NUMVENDA, VP.VPR_PROCOD, VP.VPR_QTDVEN' +
+        'DIDA, VP.VPR_VLRTOTPROD, P.PRO_DESC, P.PRO_PRECO'
       'FROM VENDAS_PRODUTOS VP'
       'LEFT JOIN PRODUTOS P ON P.PRO_COD = VP.VPR_PROCOD'
       'WHERE VPR_NUMVENDA = :VENDA')

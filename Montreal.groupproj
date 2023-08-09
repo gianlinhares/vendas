@@ -1,9 +1,9 @@
 ﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
     <PropertyGroup>
-        <ProjectGuid>{6DD5FD33-56DD-4119-8478-4B3C8794A77F}</ProjectGuid>
+        <ProjectGuid>{B74004C5-FCA6-4460-BD59-14912870E769}</ProjectGuid>
     </PropertyGroup>
     <ItemGroup>
-        <Projects Include="BDMG.dproj">
+        <Projects Include="xx.dproj">
             <Dependencies/>
         </Projects>
     </ItemGroup>
@@ -14,23 +14,23 @@
             <Default.Personality/>
         </BorlandProject>
     </ProjectExtensions>
-    <Target Name="BDMG">
-        <MSBuild Projects="BDMG.dproj"/>
+    <Target Name="xx">
+        <MSBuild Projects="xx.dproj"/>
     </Target>
-    <Target Name="BDMG:Clean">
-        <MSBuild Projects="BDMG.dproj" Targets="Clean"/>
+    <Target Name="xx:Clean">
+        <MSBuild Projects="xx.dproj" Targets="Clean"/>
     </Target>
-    <Target Name="BDMG:Make">
-        <MSBuild Projects="BDMG.dproj" Targets="Make"/>
+    <Target Name="xx:Make">
+        <MSBuild Projects="xx.dproj" Targets="Make"/>
     </Target>
     <Target Name="Build">
-        <CallTarget Targets="BDMG"/>
+        <CallTarget Targets="xx"/>
     </Target>
     <Target Name="Clean">
-        <CallTarget Targets="BDMG:Clean"/>
+        <CallTarget Targets="xx:Clean"/>
     </Target>
     <Target Name="Make">
-        <CallTarget Targets="BDMG:Make"/>
+        <CallTarget Targets="xx:Make"/>
     </Target>
     <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
 </Project>

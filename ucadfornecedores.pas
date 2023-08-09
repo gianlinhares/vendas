@@ -4,38 +4,25 @@ interface
 
 uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
-  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.ComCtrls, Vcl.ToolWin,
-  System.ImageList, Vcl.ImgList, Data.DB, System.Actions, Vcl.ActnList,
-  Vcl.DBActns, Vcl.ExtCtrls, Vcl.DBCtrls, Vcl.StdCtrls, Vcl.Mask, Vcl.Buttons,  System.UITypes;
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, ucadastropadrao, Data.DB, Vcl.StdCtrls,
+  Vcl.Buttons, Vcl.ExtCtrls, Vcl.DBCtrls, Vcl.Mask;
 
 type
-  Tfcadfornecedores = class(TForm)
-    dbn_fornecedores: TDBNavigator;
+  Tfcadfornecedores = class(Tfcadastropadrao)
     lbl_codigo: TLabel;
     dbt_codigo: TDBText;
     lbl_nome: TLabel;
-    dbe_nome: TDBEdit;
     lbl_cnpj: TLabel;
+    lbl_razaosocial: TLabel;
+    dbe_nome: TDBEdit;
     dbe_cnpj: TDBEdit;
     dbc_atiina: TDBCheckBox;
-    lbl_razaosocial: TLabel;
     dbe_razaosocial: TDBEdit;
-    btn_sair: TBitBtn;
-    src_fornecedor: TDataSource;
-    btn_pesquisa: TButton;
-    procedure btn_sairClick(Sender: TObject);
-    procedure dbn_fornecedoresBeforeAction(Sender: TObject; Button: TNavigateBtn);
-    procedure btn_pesquisaClick(Sender: TObject);
-    procedure FormCreate(Sender: TObject);
-    procedure FormShow(Sender: TObject);
-    procedure dbn_fornecedoresClick(Sender: TObject; Button: TNavigateBtn);
+    procedure btn_pesqClick(Sender: TObject);
   private
-    iCodFornecedor : integer;
-    bInsercaoEdicao : boolean;
-    procedure Abre(iCodigo : integer);
+    { Private declarations }
   public
-    property CodigoFornecedor : integer read iCodFornecedor write iCodFornecedor;
-    property InsereOuEdita : boolean read bInsercaoEdicao write bInsercaoEdicao;
+    { Public declarations }
   end;
 
 var
@@ -47,71 +34,13 @@ implementation
 
 uses udmconexao;
 
-procedure Tfcadfornecedores.Abre(iCodigo: integer);
-begin
-  if dmconexao.aq_fornecedor.Active then
-    dmconexao.aq_fornecedor.Close;
-  dmconexao.aq_fornecedor.Parameters.ParamByName('FORNECEDOR').Value := iCodigo;
-  dmconexao.aq_fornecedor.Open;
-end;
-
-procedure Tfcadfornecedores.btn_pesquisaClick(Sender: TObject);
+procedure Tfcadfornecedores.btn_pesqClick(Sender: TObject);
 var
   sCodForn : string;
 begin
+  inherited;
   sCodForn := dmconexao.RetornaBusca('F');
-  if Trim(sCodForn) <> '' then
-    Abre(StrToIntDef(sCodForn, 0));
-end;
-
-procedure Tfcadfornecedores.btn_sairClick(Sender: TObject);
-begin
-  Close;
-end;
-
-procedure Tfcadfornecedores.dbn_fornecedoresBeforeAction(Sender: TObject; Button: TNavigateBtn);
-begin
-  if Button = nbDelete then
-  begin
-    if not(dmconexao.aq_fornecedor.IsEmpty) then
-    begin
-      if MessageDlg('Deseja deletar o registro selecionado?',
-                    mtConfirmation, [mbYes, mbNo], 0, mbYes) = mrYes then
-      begin
-        dmconexao.aq_fornecedor.Delete;
-        abort;
-      end;
-    end;
-  end;
-end;
-
-procedure Tfcadfornecedores.dbn_fornecedoresClick(Sender: TObject; Button: TNavigateBtn);
-begin
-  case Button of
-    nbCancel: Abre(dmconexao.aq_fornecedorFOR_COD.AsInteger);
-  end;
-end;
-
-procedure Tfcadfornecedores.FormCreate(Sender: TObject);
-begin
-  iCodFornecedor  := 0;
-  bInsercaoEdicao := false;
-end;
-
-procedure Tfcadfornecedores.FormShow(Sender: TObject);
-begin
-  if iCodFornecedor <> 0 then
-  begin
-    Abre(iCodFornecedor);
-    if bInsercaoEdicao then
-      dmconexao.aq_fornecedor.Edit;
-  end
-  else
-  begin
-    Abre(0);
-    if bInsercaoEdicao then
-      dmconexao.aq_fornecedor.Append;
-  end;
+  src_cad.DataSet.Refresh;
 end;
 
 end.

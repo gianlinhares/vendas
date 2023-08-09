@@ -3,36 +3,34 @@ unit umenuprincipal;
 interface
 
 uses
-  System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants,
-  FMX.Types, FMX.Controls, FMX.Forms, FMX.Graphics, FMX.Dialogs, FMX.StdCtrls,
-  FMX.Controls.Presentation, FMX.Menus;
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.Menus, Vcl.ExtCtrls;
 
 type
   Tfmenuprincipal = class(TForm)
-    Panel1: TPanel;
+    pnl_menu: TPanel;
     main_menu: TMainMenu;
-    mnu_consulta: TMenuItem;
-    mnu_bscclientes: TMenuItem;
-    mnu_bscfornecedores: TMenuItem;
-    mnu_bscprodutos: TMenuItem;
-    mnu_vendas: TMenuItem;
-    mnu_cadvendas: TMenuItem;
-    mnu_sair: TMenuItem;
     mnu_cadastro: TMenuItem;
-    mnu_cadcli: TMenuItem;
-    mnu_cadforn: TMenuItem;
-    mnu_cadprod: TMenuItem;
-    mnu_bscvendas: TMenuItem;
-    procedure FormCreate(Sender: TObject);
-    procedure mnu_bscclientesClick(Sender: TObject);
-    procedure mnu_bscfornecedoresClick(Sender: TObject);
-    procedure mnu_bscprodutosClick(Sender: TObject);
+    mnu_cliente_cad: TMenuItem;
+    mnu_fornec_cad: TMenuItem;
+    mnu_produtos_cad: TMenuItem;
+    mnu_vendas_princ: TMenuItem;
+    mnu_vendas_cad: TMenuItem;
+    mnu_consultas: TMenuItem;
+    mnu_cliente_cons: TMenuItem;
+    mnu_fornec_cons: TMenuItem;
+    mnu_produtos_cons: TMenuItem;
+    mnu_sair: TMenuItem;
+    mnu_vendas_cons: TMenuItem;
+    procedure mnu_cliente_cadClick(Sender: TObject);
+    procedure mnu_fornec_cadClick(Sender: TObject);
+    procedure mnu_produtos_cadClick(Sender: TObject);
+    procedure mnu_vendas_cadClick(Sender: TObject);
+    procedure mnu_cliente_consClick(Sender: TObject);
+    procedure mnu_fornec_consClick(Sender: TObject);
+    procedure mnu_produtos_consClick(Sender: TObject);
+    procedure mnu_vendas_consClick(Sender: TObject);
     procedure mnu_sairClick(Sender: TObject);
-    procedure mnu_cadvendasClick(Sender: TObject);
-    procedure mnu_bscvendasClick(Sender: TObject);
-    procedure mnu_cadcliClick(Sender: TObject);
-    procedure mnu_cadfornClick(Sender: TObject);
-    procedure mnu_cadprodClick(Sender: TObject);
   private
     { Private declarations }
   public
@@ -44,59 +42,53 @@ var
 
 implementation
 
-{$R *.fmx}
+{$R *.dfm}
 
 uses udmconexao;
 
-procedure Tfmenuprincipal.FormCreate(Sender: TObject);
-begin
-  Self.Top  := 0;
-  Self.Left := 0;
-end;
-
-procedure Tfmenuprincipal.mnu_bscclientesClick(Sender: TObject);
-begin
-  dmconexao.RetornaBusca('C');
-end;
-
-procedure Tfmenuprincipal.mnu_bscfornecedoresClick(Sender: TObject);
-begin
-  dmconexao.RetornaBusca('F');
-end;
-
-procedure Tfmenuprincipal.mnu_bscprodutosClick(Sender: TObject);
-begin
-  dmconexao.RetornaBusca('P');
-end;
-
-procedure Tfmenuprincipal.mnu_bscvendasClick(Sender: TObject);
-begin
-  dmconexao.RetornaBusca('V');
-end;
-
-procedure Tfmenuprincipal.mnu_cadcliClick(Sender: TObject);
+procedure Tfmenuprincipal.mnu_cliente_cadClick(Sender: TObject);
 begin
   dmconexao.RetornaCadastro('C');
 end;
 
-procedure Tfmenuprincipal.mnu_cadfornClick(Sender: TObject);
+procedure Tfmenuprincipal.mnu_cliente_consClick(Sender: TObject);
+begin
+  dmconexao.RetornaBusca('C');
+end;
+
+procedure Tfmenuprincipal.mnu_fornec_cadClick(Sender: TObject);
 begin
   dmconexao.RetornaCadastro('F');
 end;
 
-procedure Tfmenuprincipal.mnu_cadprodClick(Sender: TObject);
+procedure Tfmenuprincipal.mnu_fornec_consClick(Sender: TObject);
+begin
+  dmconexao.RetornaBusca('F');
+end;
+
+procedure Tfmenuprincipal.mnu_produtos_cadClick(Sender: TObject);
 begin
   dmconexao.RetornaCadastro('P');
 end;
 
-procedure Tfmenuprincipal.mnu_cadvendasClick(Sender: TObject);
+procedure Tfmenuprincipal.mnu_produtos_consClick(Sender: TObject);
 begin
-  dmconexao.RetornaCadastro('V');
+  dmconexao.RetornaBusca('P');
 end;
 
 procedure Tfmenuprincipal.mnu_sairClick(Sender: TObject);
 begin
   Close;
+end;
+
+procedure Tfmenuprincipal.mnu_vendas_cadClick(Sender: TObject);
+begin
+  dmconexao.RetornaCadastro('V');
+end;
+
+procedure Tfmenuprincipal.mnu_vendas_consClick(Sender: TObject);
+begin
+  dmconexao.RetornaBusca('V');
 end;
 
 end.

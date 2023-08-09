@@ -9,7 +9,7 @@ uses
   Data.DB, FireDAC.Comp.Client, Data.Win.ADODB, Vcl.Dialogs, Vcl.StdCtrls,
   FireDAC.Stan.Param, FireDAC.DatS, FireDAC.DApt.Intf, FireDAC.DApt,
   FireDAC.Comp.DataSet, VCL.Forms, System.UITypes, FMX.Types, FMX.Dialogs,
-  FMX.Printer, FMX.Graphics;
+  FMX.Printer, FMX.Graphics, VCL.ExtCtrls;
 
 type
   Tdmconexao = class(TDataModule)
@@ -68,12 +68,17 @@ type
     procedure aq_venda_produtoVPR_PROCODValidate(Sender: TField);
     procedure aq_venda_produtoNewRecord(DataSet: TDataSet);
     procedure DataModuleCreate(Sender: TObject);
+    procedure aq_clienteCLI_ATIINAGetText(Sender: TField; var Text: string; DisplayText: Boolean);
+    procedure aq_fornecedorFOR_ATIINAGetText(Sender: TField; var Text: string; DisplayText: Boolean);
+    procedure aq_produtoPRO_ATIINAGetText(Sender: TField; var Text: string; DisplayText: Boolean);
   private
     function CPF_JaCadastrado(sCPF : string) : string;
     function IsValidCPF(pCPF: string): Boolean;
     function IsValidCNPJ(pCNPJ: string): Boolean;
     function CNPJ_JaCadastrado(sCNPJ: string): string;
     procedure VerificaProdutoCadastrado;
+    procedure Abre(sParamCadastro: string; iCodigo: integer);
+    function GetDescAtinvoInaTivo(sAtiIna: String): string;
   public
     procedure InsereExibeMsg(sMsg : string; bAborta : boolean = true);
     procedure OnExitFornecedores(dbe : TEdit; lbl : TLabel; bSoAtivos : boolean);
@@ -82,9 +87,11 @@ type
     procedure RetornaCadastro(sParamCadastro : string);
     function RetornaBusca(sParamBusca : string; bSomenteAtivos : boolean = false) : string;
     function GetLikeSQL(sClausulaWhere : string) : string;
+
     function GetSQLFornecedores(sCodigo : string; bSoAtivos : boolean) : string;
     function GetSQLClientes(sCodigo: string; bSoAtivos : boolean): string;
     function GetSQLProdutos(sCodigo: string; bSoAtivos : boolean): string;
+    function GetSQLVendas(sCodigo: string): string;
     function RetornaSequencial(sFieldCodigo, sTabela : string) : integer;
   end;
 
@@ -94,6 +101,7 @@ var
 type
   ITipoBusca = interface
     procedure GetCadsatro;
+    procedure Pesquisa(iCodigo : integer);
     function ConsultaBusca(cSelf : TComponent; bSoAtivos : boolean): string;
   end;
 
@@ -108,24 +116,28 @@ type
 type
   TBuscaCliente = class(TInterfacedObject, ITipoBusca)
     procedure GetCadsatro;
+    procedure Pesquisa(iCodigo : integer);
     function ConsultaBusca(cSelf : TComponent; bSoAtivos : boolean): string;
   end;
 
 type
   TBuscaFornecedor = class(TInterfacedObject, ITipoBusca)
     procedure GetCadsatro;
+    procedure Pesquisa(iCodigo : integer);
     function ConsultaBusca(cSelf : TComponent; bSoAtivos : boolean): string;
   end;
 
 type
   TBuscaProduto = class(TInterfacedObject, ITipoBusca)
     procedure GetCadsatro;
+    procedure Pesquisa(iCodigo : integer);
     function ConsultaBusca(cSelf : TComponent; bSoAtivos : boolean): string;
   end;
 
 type
   TBuscaVenda = class(TInterfacedObject, ITipoBusca)
     procedure GetCadsatro;
+    procedure Pesquisa(iCodigo : integer);
     function ConsultaBusca(cSelf : TComponent; bSoAtivos : boolean): string;
   end;
 
@@ -133,7 +145,7 @@ implementation
 
 {%CLASSGROUP 'FMX.Controls.TControl'}
 
-uses ubscclientes, ubscfornecedores, ubscvendas, ubsprodutos, ucadclientes,
+uses ubscclientes, ubscfornecedores, ubscvendas, ubscprodutos, ucadclientes,
   ucadfornecedores, ucadprodutos, ucadvendas;
 
 {$R *.dfm}
@@ -377,6 +389,19 @@ begin
     aq_clienteCLI_COD.AsInteger := RetornaSequencial('CLI_COD', 'CLIENTES');
 end;
 
+function Tdmconexao.GetDescAtinvoInaTivo(sAtiIna : String) : string;
+begin
+  if Trim(sAtiIna) = 'A' then
+    Result := 'Ativo'
+  else
+    Result := 'Inativo';
+end;
+
+procedure Tdmconexao.aq_clienteCLI_ATIINAGetText(Sender: TField; var Text: string; DisplayText: Boolean);
+begin
+  Text := GetDescAtinvoInaTivo(Sender.AsString);
+end;
+
 procedure Tdmconexao.aq_clienteCLI_CPFValidate(Sender: TField);
 var
   sClienteCadastrado : string;
@@ -430,6 +455,11 @@ begin
     aq_fornecedorFOR_COD.AsInteger := RetornaSequencial('FOR_COD', 'FORNECEDORES');
 end;
 
+procedure Tdmconexao.aq_fornecedorFOR_ATIINAGetText(Sender: TField; var Text: string; DisplayText: Boolean);
+begin
+  Text := GetDescAtinvoInaTivo(Sender.AsString);
+end;
+
 procedure Tdmconexao.aq_fornecedorFOR_CNPJValidate(Sender: TField);
 var
   sFornecedorCadastrado : string;
@@ -479,6 +509,11 @@ end;
 procedure Tdmconexao.aq_produtoNewRecord(DataSet: TDataSet);
 begin
   aq_produtoPRO_ATIINA.AsString := 'A';
+end;
+
+procedure Tdmconexao.aq_produtoPRO_ATIINAGetText(Sender: TField; var Text: string; DisplayText: Boolean);
+begin
+  Text := GetDescAtinvoInaTivo(Sender.AsString);
 end;
 
 procedure Tdmconexao.aq_produtoPRO_FORCODValidate(Sender: TField);
@@ -729,7 +764,7 @@ end;
 
 function Tdmconexao.GetSQLFornecedores(sCodigo: string; bSoAtivos : boolean): string;
 begin
-  Result := 'SELECT FOR_NOME ' +
+  Result := 'SELECT FOR_COD, FOR_NOME, FOR_RAZAO, FOR_CNPJ, FOR_ATIINA ' +
             'FROM dbo.FORNECEDORES ' +
             'WHERE FOR_COD = ' + sCodigo;
   if bSoAtivos then
@@ -738,16 +773,25 @@ end;
 
 function Tdmconexao.GetSQLProdutos(sCodigo: string; bSoAtivos : boolean): string;
 begin
-  Result := 'SELECT PRO_DESC, PRO_PRECO ' +
-            'FROM dbo.PRODUTOS ' +
-            'WHERE PRO_COD = ' + sCodigo;
+  Result := 'SELECT P.PRO_COD, P.PRO_DESC, P.PRO_PRECO, P.PRO_FORCOD, P.PRO_ATIINA,  F.FOR_NOME' +
+            'FROM dbo.PRODUTOS P' +
+            'LEFT JOIN dbo.FORNECEDORES F ON F.FOR_COD = P.PRO_FORCOD ' +
+            'WHERE P.PRO_COD = ' + sCodigo;
   if bSoAtivos then
     Result := Result + ' AND PRO_ATIINA = ''A''';
 end;
 
+function Tdmconexao.GetSQLVendas(sCodigo: string): string;
+begin
+  Result := 'SELECT V.VEN_NUMERO, V.VEN_CLICOD, V.VEN_VLRTOTAL, V.VEN_STATUS, V.VEN_DATAHORA, C.CLI_NOME ' +
+            'FROM dbo.VENDAS V' +
+            'LEFT JOIN dbo.CLIENTES C ON C.CLI_COD = V.VEN_CLICOD ' +
+            'WHERE VEN_NUMERO = '+ sCodigo;
+end;
+
 function Tdmconexao.GetSQLClientes(sCodigo: string; bSoAtivos : boolean): string;
 begin
-  Result := 'SELECT CLI_NOME ' +
+  Result := 'SELECT CLI_COD, CLI_NOME, CLI_CPF, CLI_ATIINA, CLI_DTNASC ' +
             'FROM dbo.CLIENTES ' +
             'WHERE CLI_COD = ' + sCodigo;
   if bSoAtivos then
@@ -772,6 +816,21 @@ begin
     // obtém o produto, baseado no parâmetro informado
     fBusca  := FabricaBusca.CriaBusca(sParamBusca);
     Result  := fBusca.ConsultaBusca(Self, false);
+  finally
+  end;
+end;
+
+procedure Tdmconexao.Abre(sParamCadastro: string; iCodigo : integer);
+var
+  FabricaBusca: IFactoryMethod;
+  fBusca : ITipoBusca;
+begin
+  // instancia a fábrica (Factory Method)
+  FabricaBusca := TFabricaBuscas.Create;
+  try
+    // obtém o produto, baseado no parâmetro informado
+    fBusca  := FabricaBusca.CriaBusca(sParamCadastro);
+    fBusca.GetCadsatro;
   finally
   end;
 end;
@@ -816,9 +875,18 @@ var
 begin
   fBscVendas := Tfbscvendas.Create(cSelf);
   try
-    fBscVendas.Position      := poScreenCenter;
+    fBscVendas.Position         := poScreenCenter;
+    fBscVendas.Query            := dmconexao.aq_venda;
+    fBscVendas.TipoBusca        := 'V';
+    fBscVendas.SQLSemFiltro     := 'SELECT V.VEN_NUMERO, V.VEN_CLICOD, V.VEN_VLRTOTAL, V.VEN_STATUS, ' +
+                                    'V.VEN_DATAHORA, C.CLI_NOME ' +
+                                    'FROM dbo.VENDAS V ' +
+                                    'LEFT JOIN dbo.CLIENTES C ON C.CLI_COD = V.VEN_CLICOD';
+    fBscVendas.NameFieldRetorno := 'VEN_NUMERO';
+    fBscVendas.SQLCodigo        := fBscVendas.SQLSemFiltro + ' WHERE VEN_NUMERO = :CODIGO';
+    TRadioGroup(fBscVendas.rdg_filtro).Controls[1].Enabled := false;
     if fBscVendas.ShowModal = mrOk then
-      Result := fBscVendas.CodigoVenda.ToString;
+      Result := fBscVendas.CodigoRetorno;
   finally
     fBscVendas.Free;
   end;
@@ -831,12 +899,19 @@ var
 begin
   fCadVendas := Tfcadvendas.Create(nil);
   try
-    fCadVendas.Position      := poScreenCenter;
-    fCadVendas.CodigoVenda   := 0;
+    fCadVendas.Position := poScreenCenter;
     fCadVendas.ShowModal;
   finally
     fBscVendas.Free;
   end;
+end;
+
+procedure TBuscaVenda.Pesquisa(iCodigo: integer);
+begin
+  if dmconexao.aq_venda.Active then
+    dmconexao.aq_venda.Close;
+  dmconexao.aq_venda.SQL.Add(dmconexao.GetSQLVendas(iCodigo.ToString));
+  dmconexao.aq_venda.Open;
 end;
 
 { TBuscaProduto }
@@ -847,10 +922,23 @@ var
 begin
   fBscProduto := Tfbscprodutos.Create(cSelf);
   try
-    fBscProduto.Position      := poScreenCenter;
-    fBscProduto.SomenteAtivos := bSoAtivos;
+    fBscProduto.Position         := poScreenCenter;
+    fBscProduto.Query            := dmconexao.aq_produto;
+    fBscProduto.TipoBusca        := 'P';
+    fBscProduto.SQLSemFiltro     := 'SELECT P.PRO_COD, P.PRO_DESC, P.PRO_PRECO, P.PRO_FORCOD, P.PRO_ATIINA,  F.FOR_NOME ' +
+                                    'FROM dbo.PRODUTOS P ' +
+                                    'LEFT JOIN dbo.FORNECEDORES F ON F.FOR_COD = P.PRO_FORCOD';
+    fBscProduto.NameFieldRetorno := 'PRO_COD';
+    fBscProduto.SQLCodigo        := fBscProduto.SQLSemFiltro + ' WHERE PRO_COD = :CODIGO';
+    fBscProduto.SQLDesc          := fBscProduto.SQLSemFiltro + ' WHERE UPPER(PRO_DESC) LIKE UPPER (:NOME)';
+    if bSoAtivos then
+    begin
+      fBscProduto.SQLSemFiltro := fBscProduto.SQLSemFiltro + ' WHERE FOR_ATIINA = ''A''';
+      fBscProduto.SQLCodigo    := fBscProduto.SQLCodigo + ' AND FOR_ATIINA = ''A''';
+      fBscProduto.SQLDesc      := fBscProduto.SQLDesc + ' AND FOR_ATIINA = ''A''';
+    end;
     if fBscProduto.ShowModal = mrOk then
-      Result := fBscProduto.CodigoProduto.ToString;
+      Result := fBscProduto.CodigoRetorno;
   finally
     fBscProduto.Free;
   end;
@@ -863,11 +951,19 @@ begin
   fCadProduto := Tfcadprodutos.Create(nil);
   try
     fCadProduto.Position      := poScreenCenter;
-    fCadProduto.CodigoProduto := 0;
+//    fCadProduto.CodigoProduto := 0;
     fCadProduto.ShowModal;
   finally
     fCadProduto.Free;
   end;
+end;
+
+procedure TBuscaProduto.Pesquisa(iCodigo: integer);
+begin
+  if dmconexao.aq_produto.Active then
+    dmconexao.aq_produto.Close;
+  dmconexao.aq_produto.SQL.Add(dmconexao.GetSQLProdutos(iCodigo.ToString, false));
+  dmconexao.aq_produto.Open;
 end;
 
 { TBuscaFornecedor }
@@ -878,10 +974,22 @@ var
 begin
   fBscFornecedor := Tfbscfornecedores.Create(cSelf);
   try
-    fBscFornecedor.Position      := poScreenCenter;
-    fBscFornecedor.SomenteAtivos := bSoAtivos;
+    fBscFornecedor.Position         := poScreenCenter;
+    fBscFornecedor.Query            := dmconexao.aq_fornecedor;
+    fBscFornecedor.TipoBusca        := 'F';
+    fBscFornecedor.SQLSemFiltro     := 'SELECT FOR_COD, FOR_NOME, FOR_RAZAO, FOR_CNPJ, FOR_ATIINA ' +
+                                       'FROM dbo.FORNECEDORES';
+    fBscFornecedor.NameFieldRetorno := 'FOR_COD';
+    fBscFornecedor.SQLCodigo        := fBscFornecedor.SQLSemFiltro + ' WHERE FOR_COD = :CODIGO';
+    fBscFornecedor.SQLDesc          := fBscFornecedor.SQLSemFiltro + ' WHERE UPPER(FOR_NOME) LIKE UPPER (:NOME)';
+    if bSoAtivos then
+    begin
+      fBscFornecedor.SQLSemFiltro := fBscFornecedor.SQLSemFiltro + ' WHERE FOR_ATIINA = ''A''';
+      fBscFornecedor.SQLCodigo    := fBscFornecedor.SQLCodigo + ' AND FOR_ATIINA = ''A''';
+      fBscFornecedor.SQLDesc      := fBscFornecedor.SQLDesc + ' AND FOR_ATIINA = ''A''';
+    end;
     if fBscFornecedor.ShowModal = mrOk then
-      Result := fBscFornecedor.CodigoFornecedor.ToString;
+      Result := fBscFornecedor.CodigoRetorno;
   finally
     fBscFornecedor.Free;
   end;
@@ -893,12 +1001,19 @@ var
 begin
   fCadFornecedor := Tfcadfornecedores.Create(nil);
   try
-    fCadFornecedor.Position          := poScreenCenter;
-    fCadFornecedor.CodigoFornecedor := 0;
+    fCadFornecedor.Position := poScreenCenter;
     fCadFornecedor.ShowModal;
   finally
     fCadFornecedor.Free;
   end;
+end;
+
+procedure TBuscaFornecedor.Pesquisa(iCodigo: integer);
+begin
+  if dmconexao.aq_fornecedor.Active then
+    dmconexao.aq_fornecedor.Close;
+  dmconexao.aq_fornecedor.SQL.Add(dmconexao.GetSQLFornecedores(iCodigo.ToString, false));
+  dmconexao.aq_fornecedor.Open;
 end;
 
 { TBuscaCliente }
@@ -909,10 +1024,25 @@ var
 begin
   fBscCliente := Tfbscclientes.Create(cSelf);
   try
-    fBscCliente.Position      := poScreenCenter;
-    fBscCliente.SomenteAtivos := bSoAtivos;
+    fBscCliente.Position         := poScreenCenter;
+    fBscCliente.Query            := dmconexao.aq_cliente;
+    fBscCliente.TipoBusca        := 'C';
+    fBscCliente.SQLSemFiltro     := 'SELECT CLI_COD, CLI_NOME, CLI_CPF, CLI_ATIINA, CLI_DTNASC ' +
+                                    'FROM dbo.CLIENTES';
+    fBscCliente.NameFieldRetorno := 'CLI_COD';
+    fBscCliente.SQLCodigo        := fBscCliente.SQLSemFiltro + ' WHERE CLI_COD = :CODIGO';
+    fBscCliente.SQLDesc          := fBscCliente.SQLSemFiltro + ' WHERE UPPER(CLI_NOME) LIKE UPPER(:NOME)';
+    if bSoAtivos then
+    begin
+      fBscCliente.SQLSemFiltro := fBscCliente.SQLSemFiltro + ' WHERE CLI_ATIINA = ''A''';
+      fBscCliente.SQLCodigo    := fBscCliente.SQLCodigo + ' AND CLI_ATIINA = ''A''';
+      fBscCliente.SQLDesc      := fBscCliente.SQLDesc + ' AND CLI_ATIINA = ''A''';
+    end;
     if fBscCliente.ShowModal = mrOk then
-      Result := fBscCliente.CodigoCliente.ToString;
+    begin
+      Result := fBscCliente.CodigoRetorno;
+      Pesquisa(StrToIntDef(fBscCliente.CodigoRetorno, 0));
+    end;
   finally
     fBscCliente.Free;
   end;
@@ -924,12 +1054,19 @@ var
 begin
   fCadCliente := Tfcadclientes.Create(nil);
   try
-    fCadCliente.Position      := poScreenCenter;
-    fCadCliente.CodigoCliente := 0;
+    fCadCliente.Position := poScreenCenter;
     fCadCliente.ShowModal;
   finally
     fCadCliente.Free;
   end;
+end;
+
+procedure TBuscaCliente.Pesquisa(iCodigo: integer);
+begin
+  if dmconexao.aq_cliente.Active then
+    dmconexao.aq_cliente.Close;
+  dmconexao.aq_cliente.SQL.Add(dmconexao.GetSQLClientes(iCodigo.ToString, false));
+  dmconexao.aq_cliente.Open;
 end;
 
 { TFabricaBuscas }
@@ -944,22 +1081,22 @@ begin
   if Trim(TipoBusca) = 'C' then // Cliente
   begin
     fBuscaCLiente := TBuscaCliente.Create;
-    Result := fBuscaCLiente;
+    Result        := fBuscaCLiente;
   end
   else if Trim(TipoBusca) = 'F' then // Fornecedor
   begin
     fBuscaFornec := TBuscaFornecedor.Create;
-    Result := fBuscaFornec;
+    Result       := fBuscaFornec;
   end
   else if Trim(TipoBusca) = 'P' then // Produto
   begin
     fBuscaProduto := TBuscaProduto.Create;
-    Result := fBuscaProduto;
+    Result        := fBuscaProduto;
   end
   else if Trim(TipoBusca) = 'V' then // Venda
   begin
     fBuscaVenda := TBuscaVenda.Create;
-    Result := fBuscaVenda;
+    Result      := fBuscaVenda;
   end;
 end;
 
